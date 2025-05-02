@@ -3,15 +3,17 @@ import mongoose from "mongoose";
 const EvaluationSchema = new mongoose.Schema({
   // Informations de l'agent évalué
   agent: {
-    nom: String,
-    prenom: String,
-    emploi: String,
-    direction: String,
-    typeContrat: String,
+    nom: { type: String, required: true },
+    prenom: { type: String, required: true },     
+    prenom: { type: String, required: true },
+    email: { type: String, required: true },  
+    emploi: {type: String, required: true },
+    direction: {type: String, required: true }, 
+    typeContrat: {type: String, required:true},
     dateEmbauche: Date,
     dateDebutCDD: Date,
     dateFinCDD: Date,
-    dureeCDD: String
+    dureeCDD: { type: String, required: false },
   },
 
   // Objectifs fixés (Activité 1 à 6)
@@ -21,8 +23,6 @@ const EvaluationSchema = new mongoose.Schema({
       attendu: String,
       realise: String,
       indicateur: String,
-      pourcentageAtteinte: Number,
-      commentaires: String
     }
   ],
 

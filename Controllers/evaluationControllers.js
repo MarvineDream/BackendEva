@@ -25,7 +25,7 @@ export const createEvaluation = async (req, res) => {
     const filePath = await generateEvaluationPdf(evaluation, `evaluation_${evaluation._id}`);
 
     // Envoyer l'email avec le PDF
-    await sendEvaluationEmail("djerri.djomouo@bamboo-emf.com", filePath, `Évaluation PDF de ${evaluation.agent.nom}`);
+    await sendEvaluationEmail("pavy.ndong@bamboo-emf.com", filePath, `Évaluation PDF de ${evaluation.agent.nom}`);
 
     // Répondre avec un statut 201 et l'évaluation créée
     res.status(201).json({ message: "Évaluation créée avec succès.", evaluation });
