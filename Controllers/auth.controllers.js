@@ -2,39 +2,41 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Inscription
 const register = async (req, res) => {
+  const { nom, email, password, role, departement } = req.body;
+
   try {
-    const { nom, email, password } = req.body;
-
-    // Vérification des champs requis
-    if (!nom || !email || !password) {
-      return res.status(400).json({ message: "Tous les champs sont requis" });
+    // Vérifions si l'utilisateur existe déjà
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: "Cet email est déjà utilisé." });
     }
 
-    // Vérification de l'email existant
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Email déjà utilisé" });
-    }
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Vérification de la force du mot de passe
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Le mot de passe doit contenir au moins 6 caractères" });
-    }
+    // Création de l'utilisateur
+    const newUser = new User({
+      nom,
+      email,
+      password: hashedPassword,
+      role,
+      departement: role === "manager" ? departement : undefined
+    });
+    console.log("Données enregistrées :", newUser);
+    await newUser.save();
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ nom, email, password: hashed });
-
-    await user.save();
-    res.status(201).json({ message: "Utilisateur enregistré" });
-  } catch (err) {
-    console.error(err); // Log de l'erreur pour le débogage
-    res.status(500).json({ message: "Erreur lors de l'enregistrement de l'utilisateur" });
+    res.status(201).json({ message: "Utilisateur inscrit avec succès" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erreur lors de l'inscription", error: error.message });
   }
 };
+
 
 // Connexion
 const login = async (req, res) => {
@@ -66,7 +68,7 @@ const login = async (req, res) => {
       const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: "1d" });
       res.json({ token, user: { nom: user.nom, email: user.email, role: user.role } });
     } catch (err) {
-      console.error(err); // Log de l'erreur pour le débogage
+      console.error(err);
       res.status(500).json({ message: "Erreur lors de la connexion" });
     }
   };
