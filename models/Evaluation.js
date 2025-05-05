@@ -2,18 +2,18 @@ import mongoose from "mongoose";
 
 const EvaluationSchema = new mongoose.Schema({
   // Informations de l'agent évalué
-  agent: { 
-    nom: { type: String },
-    prenom: { type: String },     
-    prenom: { type: String },
-    email: { type: String },  
-    emploi: {type: String },
-    direction: {type: String }, 
-    typeContrat: {type: String },
+  agent: {
+    nom: { type: String, required: true },
+    prenom: { type: String, required: true },     
+    prenom: { type: String, required: true },
+    email: { type: String, required: true },  
+    emploi: {type: String, required: true },
+    direction: {type: String, required: true }, 
+    typeContrat: {type: String, required:true},
     dateEmbauche: Date,
     dateDebutCDD: Date,
     dateFinCDD: Date,
-    dureeCDD: { type: String },
+    dureeCDD: { type: String, required: false },
   },
 
   // Objectifs fixés (Activité 1 à 6)

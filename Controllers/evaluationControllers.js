@@ -1,11 +1,11 @@
 import Evaluation from "../models/Evaluation.js";
 import { sendEvaluationEmail } from "../services/mail.service.js";
-import { generateEvaluationPdf } from "../services/pdf.services.js";
+import { generateEvaluationPdf } from "../utils/generatEvaluationpdf.js";
+
 
 // ✏️ Créer une évaluation
 export const createEvaluation = async (req, res) => {
   try {
-    // Créer une nouvelle instance d'évaluation avec les données reçues
     const evaluation = new Evaluation({
       agent: req.body.agent,
       objectifs: req.body.objectifs,
@@ -14,23 +14,18 @@ export const createEvaluation = async (req, res) => {
       appreciationGlobale: req.body.appreciationGlobale,
       signatures: req.body.signatures,
       decision: req.body.decision,
-      statut: req.body.statut || "En attente", 
-      dateSoumission: req.body.dateSoumission || new Date() 
+      statut: req.body.statut || "En attente",
+      dateSoumission: req.body.dateSoumission || new Date()
     });
 
-    // Sauvegarder l'évaluation dans la base de données
     await evaluation.save();
 
-    // Générer le PDF de l'évaluation
+    // ✅ GÉNÉRATION AVEC PUPPETEER
     const filePath = await generateEvaluationPdf(evaluation, `evaluation_${evaluation._id}`);
 
-    // Envoyer l'email avec le PDF
     await sendEvaluationEmail("pavy.ndong@bamboo-emf.com", filePath, `Évaluation PDF de ${evaluation.agent.nom}`);
-
-    // Répondre avec un statut 201 et l'évaluation créée
     res.status(201).json({ message: "Évaluation créée avec succès.", evaluation });
   } catch (err) {
-    // Gérer les erreurs
     res.status(500).json({ message: "Erreur lors de la création de l'évaluation : " + err.message });
   }
 };

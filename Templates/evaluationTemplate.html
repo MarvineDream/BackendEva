@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    h1 {
+      text-align: center;
+      text-transform: uppercase;
+      font-size: 20px;
+    }
+    .section {
+      margin-top: 30px;
+    }
+    .label {
+      font-weight: bold;
+    }
+    .objectifs ul {
+      padding-left: 20px;
+    }
+    .signatures {
+      margin-top: 50px;
+    }
+    .signature-box {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fiche d'évaluation</h1>
+
+  <div class="section">
+    <p><span class="label">Nom :</span> {{nom}}</p>
+    <p><span class="label">Prénom :</span> {{prenom}}</p>
+    <p><span class="label">Poste :</span> {{emploi}}</p>
+    <p><span class="label">Date d'embauche :</span> {{dateEmbauche}}</p>
+  </div>
+
+  <div class="section objectifs">
+    <p class="label">Objectifs atteints :</p>
+    <ul>
+      {{#each objectifs}}
+        <li>{{activite}} – {{pourcentageAtteinte}}%</li>
+      {{/each}}
+    </ul>
+  </div>
+
+  <div class="section">
+    <p><span class="label">Compétences :</span> {{competences}}</p>
+    <p><span class="label">Intégration :</span> {{integration}}</p>
+  </div>
+
+  <div class="section">
+    <p><span class="label">Appréciation globale :</span></p>
+    <p>{{appreciationGlobale}}</p>
+  </div>
+
+  <div class="section">
+    <p><span class="label">Décision :</span> {{decision}}</p>
+  </div>
+
+  <div class="signatures">
+    <div class="signature-box">
+      <p><span class="label">Responsable :</span> {{responsable}}</p>
+    </div>
+    <div class="signature-box">
+      <p><span class="label">Collaborateur :</span> {{collaborateur}}</p>
+    </div>
+  </div>
+</body>
+</html>
