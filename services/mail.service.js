@@ -1,9 +1,11 @@
 import nodemailer from "nodemailer";
 import fs from "fs";
 
-export const sendEvaluationEmail = async (to, filePath, subject) => {
+export const sendEvaluationEmail = async (to, pdfPath, subject) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com", // ou smtp.office365.com, selon ton service
+    port: 587,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -14,11 +16,12 @@ export const sendEvaluationEmail = async (to, filePath, subject) => {
     from: `"Évaluations RH" <${process.env.EMAIL_USER}>`,
     to,
     subject,
-    text: "Veuillez trouver ci-joint la fiche d'évaluation du personnel.",
+    text: "Veuillez trouver ci-joint la fiche d’évaluation au format PDF.",
     attachments: [
       {
-        filename: filePath.split("/").pop(),
-        path: filePath,
+        filename: "fiche_evaluation.pdf",
+        path: pdfPath,
+        contentType: "application/pdf",
       },
     ],
   };
