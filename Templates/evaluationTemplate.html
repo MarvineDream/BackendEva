@@ -1,74 +1,182 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-    }
-    h1 {
-      text-align: center;
-      text-transform: uppercase;
-      font-size: 20px;
-    }
-    .section {
-      margin-top: 30px;
-    }
-    .label {
-      font-weight: bold;
-    }
-    .objectifs ul {
-      padding-left: 20px;
-    }
-    .signatures {
-      margin-top: 50px;
-    }
-    .signature-box {
-      margin-top: 20px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Fiche d'évaluation</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fiche d'Évaluation</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        font-size: 12pt;
+        color: #333;
+      }
 
-  <div class="section">
-    <p><span class="label">Nom :</span> ${{nom}}</p>
-    <p><span class="label">Prénom :</span> {{prenom}}</p>
-    <p><span class="label">Poste :</span> {{emploi}}</p>
-    <p><span class="label">Date d'embauche :</span> {{dateEmbauche}}</p>
-  </div>
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #2c3e50;
+      }
 
-  <div class="section objectifs">
-    <p class="label">Objectifs atteints :</p>
-    <ul>
+      h2 {
+        margin-top: 30px;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 5px;
+        color: #34495e;
+      }
+
+      h3 {
+        margin-top: 20px;
+        margin-bottom: 5px;
+        color: #2c3e50;
+      }
+
+      .section {
+        margin-bottom: 25px;
+      }
+
+      .block {
+        margin-bottom: 15px;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+      }
+
+      .label {
+        font-weight: bold;
+      }
+
+      .note {
+        font-weight: bold;
+        color: #2c3e50;
+      }
+
+      .competences-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        margin-bottom: 30px;
+        font-size: 11pt;
+      }
+
+      .competences-table th,
+      .competences-table td {
+        border: 1px solid #aaa;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .competences-table th {
+        background-color: #dbe5f1;
+        color: #2c3e50;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Fiche d'Évaluation du Personnel</h1>
+
+    <div class="section">
+      <h2>Informations du personnel</h2>
+      <p><span class="label">Nom :</span> {{staff.nom}}</p>
+      <p><span class="label">Prénom :</span> {{staff.prenom}}</p>
+      <p><span class="label">Poste :</span> {{staff.poste}}</p>
+      <p><span class="label">Département :</span> {{staff.departement}}</p>
+      <p><span class="label">Date de début :</span> {{staff.dateDebut}}</p>
+      <p><span class="label">Date de fin :</span> {{staff.dateFin}}</p>
+    </div>
+
+    <div class="section">
+      <h2>Objectifs</h2>
       {{#each objectifs}}
-        <li>{{activite}} – {{pourcentageAtteinte}}%</li>
+        <div class="block">
+          <p><span class="label">Objectif :</span> {{objectif}}</p>
+          <p><span class="label">Résultat :</span> {{resultat}}</p>
+          <p><span class="label">Note :</span> <span class="note">{{note}}</span></p>
+        </div>
       {{/each}}
-    </ul>
-  </div>
-
-  <div class="section">
-    <p><span class="label">Compétences :</span> {{competences}}</p>
-    <p><span class="label">Intégration :</span> {{integration}}</p>
-  </div>
-
-  <div class="section">
-    <p><span class="label">Appréciation globale :</span></p>
-    <p>{{appreciationGlobale}}</p>
-  </div>
-
-  <div class="section">
-    <p><span class="label">Décision :</span> {{decision}}</p>
-  </div>
-
-  <div class="signatures">
-    <div class="signature-box">
-      <p><span class="label">Responsable :</span> {{responsable}}</p>
     </div>
-    <div class="signature-box">
-      <p><span class="label">Collaborateur :</span> {{collaborateur}}</p>
+
+    <div class="section">
+      <h2>Compétences professionnelles</h2>
+
+      <!-- Savoir -->
+      <h3>Savoir</h3>
+      <table class="competences-table">
+        <thead>
+          <tr>
+            <th>Critère</th>
+            <th>Note</th>
+            <th>Axe d'amélioration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each competences.savoir}}
+            <tr>
+              <td>{{critere}}</td>
+              <td>{{note}}</td>
+              <td>{{axeAmelioration}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+
+      <!-- Savoir-Faire -->
+      <h3>Savoir-Faire</h3>
+      <table class="competences-table">
+        <thead>
+          <tr>
+            <th>Critère</th>
+            <th>Note</th>
+            <th>Axe d'amélioration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each competences.savoirFaire}}
+            <tr>
+              <td>{{critere}}</td>
+              <td>{{note}}</td>
+              <td>{{axeAmelioration}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+
+      <!-- Savoir-Être -->
+      <h3>Savoir-Être</h3>
+      <table class="competences-table">
+        <thead>
+          <tr>
+            <th>Critère</th>
+            <th>Note</th>
+            <th>Axe d'amélioration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each competences.savoirEtre}}
+            <tr>
+              <td>{{critere}}</td>
+              <td>{{note}}</td>
+              <td>{{axeAmelioration}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
     </div>
-  </div>
-</body>
+
+    <div class="section">
+      <h2>Commentaires du Manager</h2>
+      <p>{{commentairesManager}}</p>
+    </div>
+
+    <div class="section">
+      <h2>Commentaires RH</h2>
+      <p>{{commentairesRh}}</p>
+    </div>
+
+    <div class="section">
+      <h2>Décision RH</h2>
+      <p>{{decisionRh}}</p>
+    </div>
+  </body>
 </html>
