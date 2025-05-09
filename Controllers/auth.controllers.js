@@ -8,9 +8,10 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const register = async (req, res) => {
   try {
     const { nom, email, password } = req.body;
-
+    console.log(req.body); // Log de la requête pour le débogage
+    
     // Vérification des champs requis
-    if (!nom || !email || !password) {
+    if (!nom || !email || !password ) {
       return res.status(400).json({ message: "Tous les champs sont requis" });
     }
 
