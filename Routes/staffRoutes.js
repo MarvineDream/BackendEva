@@ -6,10 +6,10 @@ import { get } from "mongoose";
 
 const router = express.Router();
 
-router.post('/', createStaff);
+router.post('/', authorizeRoles("RH", "admin"), createStaff);
 router.get('/RH', getStaffByRh);
 router.get('/stats', getStats);
-router.get('/All', authMiddleware, authorizeRoles, getAllStaffs);
+router.get('/All', authMiddleware, authorizeRoles("RH", "admin"), getAllStaffs);
 router.get('/:id', getStaffById);
 router.get('/manager', authMiddleware, authorizeRoles(["manager"]), getStaffByManager);
 router.put('/:id', updateStaff);
