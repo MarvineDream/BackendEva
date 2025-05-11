@@ -126,3 +126,25 @@ export const getStaffByManager = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
+
+export const getStaffByRh = async (req, res) => {
+  try {
+    const { _id, departement, role } = req.user;
+
+    // Vérification de rôle RH
+    if (role !== "RH") {
+      return res.status(403).json({ message: "Accès interdit" });
+    }
+
+    // Ne récupérer que le staff enregistré par ce RH dans ce département
+    const staffs = await Staff.find({
+      departement,
+      managerId: _id // doit être défini lors de la création du staff
+    });
+
+    res.json(staffs);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur de récupération du staff RH" });
+  }
+};
