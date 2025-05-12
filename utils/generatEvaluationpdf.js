@@ -4,26 +4,32 @@ import path from "path";
 import Handlebars from "handlebars";
 import { fileURLToPath } from "url";
 
-// ⚙️ Support ESM (__dirname alternative)
+// 🧭 Résolution de __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const generateEvaluationPdf = async (evaluation, fileName) => {
   try {
-    // 🔄 Nettoyer les données Mongoose
+    // 🧹 Nettoyer l'objet Mongoose
     const data = JSON.parse(JSON.stringify(evaluation));
 
-    // 📄 Charger le template HTML
-    const templatePath = path.join(__dirname, "../templates/evaluationTemplate.html");
+    // 📄 Résoudre le chemin absolu du template HTML
+    const templatePath = path.resolve(__dirname, "../templates/evaluationTemplate.html");
+
+    // 🔐 Vérifie si le fichier existe avant de le lire
+    if (!(await fs.pathExists(templatePath))) {
+      throw new Error(`Le fichier de template est introuvable : ${templatePath}`);
+    }
+
     const html = await fs.readFile(templatePath, "utf8");
 
-    // 🛠️ Compiler Handlebars avec les options pour permettre l'accès aux propriétés héritées
+    // 🛠️ Compile le template Handlebars avec options de sécurité
     const template = Handlebars.compile(html, {
       allowProtoPropertiesByDefault: true,
-      allowProtoMethodsByDefault: true, // optionnelle
+      allowProtoMethodsByDefault: true,
     });
 
-    // 📊 Préparer les données à injecter dans le template
+    // 🗓️ Formatage des dates (format français)
     const formattedData = {
       ...data,
       dateEmbauche: data.agent?.dateEmbauche
@@ -39,18 +45,22 @@ export const generateEvaluationPdf = async (evaluation, fileName) => {
 
     const finalHtml = template(formattedData);
 
-    // 🖨️ Générer le PDF avec Puppeteer
+    // 🖨️ Lance Puppeteer et génère le PDF
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
     await page.setContent(finalHtml, { waitUntil: "networkidle0" });
 
-    const outputPath = path.join("exports", `${fileName}.pdf`);
+    // 📂 Crée le dossier d'exports s’il n’existe pas
+    const exportDir = path.resolve(__dirname, "../exports");
+    await fs.ensureDir(exportDir);
+
+    const outputPath = path.join(exportDir, `${fileName}.pdf`);
     await page.pdf({ path: outputPath, format: "A4", printBackground: true });
 
     await browser.close();
     return outputPath;
   } catch (error) {
-    console.error("Erreur génération PDF :", error.message);
+    console.error("❌ Erreur génération PDF :", error.message);
     throw error;
   }
 };
