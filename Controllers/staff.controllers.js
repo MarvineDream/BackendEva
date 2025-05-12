@@ -2,6 +2,8 @@ import Staff from '../models/Staff.js';
 import dayjs from 'dayjs';
 import authMiddleware from "../middleware/auth.middleware.js";
 import User from '../models/User.js';
+import { format } from "date-fns";
+  import { fr } from "date-fns/locale";
 
 
 
@@ -35,40 +37,57 @@ export const createStaff = async (req, res) => {
   };
 
   
-
-export const getStats = async (req, res) => {
-  try {
-    const staffs = await Staff.find();
-
-    const totalStaff = staffs.length;
-
-    // 🔢 Groupement par département
-    const parDepartement = staffs.reduce((acc, staff) => {
-      const dep = staff.departement || "Non défini";
-      acc[dep] = (acc[dep] || 0) + 1;
-      return acc;
-    }, {});
-
-    const parDepartementFormatted = Object.entries(parDepartement).map(
-      ([nom, count]) => ({ nom, count })
-    );
-
-    // 📅 Contrats expirant dans les 30 jours
-    const dans30Jours = dayjs().add(30, "day");
-    const contratsExpirants = staffs.filter((s) => {
-      return s.dateFin && dayjs(s.dateFin).isBefore(dans30Jours);
-    });
-
-    res.json({
-      totalStaff,
-      parDepartement: parDepartementFormatted,
-      contratsExpirants
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-};
+  export const getStats = async (req, res) => {
+    try {
+      const staffs = await Staff.find();
+  
+      const totalStaff = staffs.length;
+  
+      // 🔢 Groupement par département
+      const parDepartement = staffs.reduce((acc, staff) => {
+        const dep = staff.departement || "Non défini";
+        acc[dep] = (acc[dep] || 0) + 1;
+        return acc;
+      }, {});
+  
+      const parDepartementFormatted = Object.entries(parDepartement).map(
+        ([nom, count]) => ({ nom, count })
+      );
+  
+      // 📅 Contrats expirant dans les 30 jours
+      const dans30Jours = dayjs().add(30, "day");
+      const contratsExpirants = staffs.filter((s) => {
+        return s.dateFin && dayjs(s.dateFin).isBefore(dans30Jours);
+      });
+  
+      // ✅ Formatage des dates en dd/MM/yyyy
+      const formattedContratsExpirants = contratsExpirants.map((s) => ({
+        _id: s._id,
+        nom: s.nom,
+        prenom: s.prenom,
+        email: s.email,
+        poste: s.poste,
+        departement: s.departement,
+        typeContrat: s.typeContrat,
+        dateEmbauche: s.dateEmbauche
+          ? format(new Date(s.dateEmbauche), "dd/MM/yyyy")
+          : null,
+        dateFinContrat: s.dateFin
+          ? format(new Date(s.dateFin), "dd/MM/yyyy")
+          : null,
+      }));
+  
+      res.json({
+        totalStaff,
+        parDepartement: parDepartementFormatted,
+        contratsExpirants: formattedContratsExpirants,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  };
+  
 
 
 
