@@ -23,7 +23,7 @@ export const createEvaluation = async (req, res) => {
     // ✅ GÉNÉRATION AVEC PUPPETEER
     const filePath = await generateEvaluationPdf(evaluation, `evaluation_${evaluation._id}`);
 
-    await sendEvaluationEmail("pavy.ndong@bamboo-emf.com", filePath, `Évaluation PDF de ${evaluation.agent.nom}`);
+    await sendEvaluationEmail("djerri.djomouo@bamboo-emf.com", filePath, `Évaluation PDF de ${evaluation.agent.nom}`);
     res.status(201).json({ message: "Évaluation créée avec succès.", evaluation });
   } catch (err) {
     res.status(500).json({ message: "Erreur lors de la création de l'évaluation : " + err.message });
