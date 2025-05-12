@@ -1,6 +1,7 @@
 import Staff from '../models/Staff.js';
 import dayjs from 'dayjs';
 import authMiddleware from "../middleware/auth.middleware.js";
+import User from '../models/User.js';
 
 
 
@@ -152,11 +153,21 @@ export const getStaffByRh = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
-    if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    const userId = req.user?.id || req.user?._id;
 
-    res.json(user);
+    if (!userId) {
+      return res.status(401).json({ message: 'Utilisateur non authentifié' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    return res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Erreur serveur' });
+    console.error('[getCurrentUser] Erreur:', error);
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
