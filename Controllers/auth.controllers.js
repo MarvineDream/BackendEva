@@ -4,43 +4,69 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Inscription
-const register = async (req, res) => {
+const createUserAccount = async (req, res) => {
   try {
-    const { nom, email, password, role, departement } = req.body;
-    console.log("Données de la requête :", req.body); // Log de la requête pour le débogage
+    const { nom, email, password, role } = req.body;
 
-    // Vérification des champs requis
-    if (!nom || !email || !password || !departement) {
-      console.log("Champs manquants :", { nom, email, password, departement }); // Log des champs manquants
-      return res.status(400).json({ message: "Tous les champs sont requis" });
+    console.log("👉 Requête reçue pour créer un utilisateur :", req.body);
+
+    // Vérifie que les champs sont présents
+    if (!nom || !email || !password || !role) {
+      console.warn("Champs manquants :", { nom, email, password, role });
+      return res.status(400).json({ error: "Nom, email, mot de passe et rôle sont requis." });
     }
 
-    // Vérification de l'email existant
-    const existing = await User.findOne({ email });
-    if (existing) {
-      console.log("Email déjà utilisé :", email); // Log si l'email existe déjà
-      return res.status(400).json({ message: "Email déjà utilisé" });
+    // Vérifie que le rôle est autorisé
+    const allowedRoles = ["admin", "RH", "Manager"];
+    if (!allowedRoles.includes(role)) {
+      console.warn("Rôle invalide :", role);
+      return res.status(400).json({ error: "Rôle invalide. Rôles autorisés : admin, RH, Manager." });
     }
 
-    // Vérification de la force du mot de passe
-    if (password.length < 6) {
-      console.log("Mot de passe trop court :", password.length); // Log de la longueur du mot de passe
-      return res.status(400).json({ message: "Le mot de passe doit contenir au moins 6 caractères" });
+    // Vérifie si l'email est déjà utilisé
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      console.warn("Email déjà utilisé :", email);
+      return res.status(409).json({ error: "Un utilisateur avec cet email existe déjà." });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
-    console.log("Mot de passe haché :", hashed); // Log du mot de passe haché
-    const user = new User({ nom, email, password: hashed, role, departement });
+    console.log("Hachage du mot de passe...");
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    await user.save();
-    console.log("Utilisateur enregistré :", user); // Log de l'utilisateur enregistré
-    res.status(201).json({ message: "Utilisateur enregistré" });
-  } catch (err) {
-    console.error("Erreur lors de l'enregistrement :", err); // Log de l'erreur pour le débogage
-    res.status(500).json({ message: "Erreur lors de l'enregistrement de l'utilisateur" });
+    // Création du compte
+    const newUser = new User({
+      nom,
+      email,
+      password: hashedPassword,
+      role, 
+    });
+
+    console.log("Enregistrement du nouvel utilisateur en base de données...");
+    await newUser.save();
+
+    console.log("Compte créé avec succès :", {
+      id: newUser._id,
+      nom: newUser.nom,
+      email: newUser.email,
+      role: newUser.role,
+    });
+
+    res.status(201).json({
+      message: "Compte utilisateur créé avec succès.",
+      user: {
+        id: newUser._id,
+        nom: newUser.nom,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
+  } catch (error) {
+    console.error("Erreur lors de la création de l'utilisateur :", error);
+    res.status(500).json({ error: "Erreur serveur." });
   }
 };
+
+
 
 // Connexion
 const login = async (req, res) => {
@@ -83,7 +109,7 @@ const login = async (req, res) => {
         nom: user.nom,
         email: user.email,
         role: user.role,
-        departement: user.departement, 
+        departement: user.departements, 
       },
     });
   } catch (err) {
@@ -98,4 +124,4 @@ const login = async (req, res) => {
 
   
   
-export { login, register };
+export { login, createUserAccount };

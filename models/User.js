@@ -1,14 +1,30 @@
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-  nom: { type: String},
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ["Manager", "RH", "admin"] },
-  departement: { type: String, required: true, unique: true },
-},
-{ timestamps: true });
+const userSchema = new mongoose.Schema(
+  {
+    nom: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
 
-const User = mongoose.model("User", UserSchema);
+    role: {
+      type: String,
+      enum: ["RH", "Manager"],
+      default: "Manager",
+      required: true
+    },
 
-export default User;
+    departements: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Departement",
+      }
+    ],
+
+    // Historique ou audit éventuel
+    lastLogin: Date,
+    isActive: { type: Boolean, default: true }
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("User", userSchema);

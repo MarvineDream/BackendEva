@@ -5,6 +5,7 @@ import EvaluationRoutes from './Routes/EvaluationRoutes.js';
 import { connectToDatabase } from './config/db.js';
 import authRoutes from './Routes/authRoute.js';
 import staffRoutes from './Routes/staffRoutes.js';
+import departemantRoutes from './Routes/departementRoutes.js';
 
 
 dotenv.config();
@@ -40,6 +41,7 @@ app.use(express.json());
 app.use('/Evaluation', EvaluationRoutes);
 app.use('/auth', authRoutes);
 app.use('/staff', staffRoutes);
+app.use('/departement', departemantRoutes);
 
 
 
