@@ -1,4 +1,6 @@
 import Staff from "../models/Staff.js";
+import User from "../models/User.js";
+import Department from "../models/Departement.js";
 
 
 
@@ -107,18 +109,53 @@ export const getStaffByResponsable = async (req, res) => {
 export const getStaffByManager = async (req, res) => {
   try {
     const { _id, role } = req.user;
+    console.log(`🔍 Requête reçue pour récupérer les staffs du manager ID: ${_id}, rôle: ${role}`);
 
     if (role !== "Manager") {
+      console.warn(`⚠️ Accès refusé pour l'utilisateur ID: ${_id} avec rôle: ${role}`);
       return res.status(403).json({ message: "Accès non autorisé" });
     }
 
-    const staffs = await Staff.find({ managerId: _id }).sort({ nom: 1 });
-res.status(200).json(staffs);
+    const staffs = await Staff.find({ managerId: _id })
+      .populate('departement', 'name description')  // Populer seulement certains champs
+      .sort({ nom: 1 });
+
+    console.log(`✅ ${staffs.length} staff(s) trouvé(s) pour le manager ID: ${_id}`);
+    staffs.forEach(s => {
+      console.log(`- Staff: ${s.nom} ${s.prenom}, Département: ${s.departement ? s.departement.name : "Non renseigné"}`);
+    });
+
+    res.status(200).json(staffs);
 
   } catch (error) {
+    console.error("❌ Erreur lors de la récupération du staff :", error);
     res.status(500).json({ message: "Erreur lors de la récupération du staff" });
   }
 };
+
+
+export const getStaffByDepartment = async (req, res) => {
+  const managerId = req.user.id;
+
+  try {
+    // Récupérer les départements gérés par ce manager
+    const departments = await Department.find({ managerId });
+    const departmentIds = departments.map(dep => dep._id);
+
+    console.log(`🔍 Départements trouvés : ${departments.map(d => d.name).join(", ")}`);
+
+    // Récupérer les staffs de ces départements
+    const staffs = await Staff.find({ department: { $in: departmentIds } }).populate('department');
+
+    console.log(`👥 ${staffs.length} staff(s) trouvé(s) pour le manager ${managerId}`);
+    res.status(200).json(staffs);
+  } catch (error) {
+    console.error("❌ Erreur :", error);
+    res.status(500).json({ message: "Erreur interne serveur" });
+  }
+};
+
+
 
 
 // Statistiques globales
@@ -147,3 +184,22 @@ export const getStats = async (req, res) => {
     res.status(500).json({ message: "Erreur statistiques", error: err.message });
   }
 };
+
+
+// Récupérer les contrats expirants
+export const getExpiredContracts = async (req, res) => {
+  try {
+    const expiredContracts = await Staff.find({
+      dateFinContrat: { $lt: new Date() }
+    }).sort({ dateFinContrat: 1 }); // Tri par date de fin de contrat
+
+    if (expiredContracts.length === 0) {
+      return res.status(404).json({ message: "Aucun contrat expirant trouvé." });
+    }
+
+    res.json(expiredContracts);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur lors de la récupération des contrats expirants", error: err.message });
+  }
+};
+

@@ -15,6 +15,9 @@ const evaluationPotentielSchema = new mongoose.Schema({
   },
   commentaire: String,
   dateEvaluation: { type: Date, default: Date.now },
+},
+{
+  timestamps: true
 });
 
 export default mongoose.model('EvaluationPotentiel', evaluationPotentielSchema);

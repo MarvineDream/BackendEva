@@ -72,26 +72,29 @@ const createUserAccount = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('[LOGIN] Tentative avec email :', email);
 
     // Vérification des champs requis
     if (!email || !password) {
+      console.warn('[LOGIN] Champs manquants');
       return res.status(400).json({ message: "Tous les champs sont requis" });
     }
 
     const user = await User.findOne({ email });
-
-    // Vérification de l'utilisateur et du mot de passe
     if (!user) {
+      console.warn('[LOGIN] Utilisateur non trouvé pour:', email);
       return res.status(401).json({ message: "Identifiants invalides" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.warn('[LOGIN] Mot de passe incorrect pour:', email);
       return res.status(401).json({ message: "Identifiants invalides" });
     }
 
     // Vérification de la clé secrète
     if (!JWT_SECRET) {
+      console.error('[LOGIN] JWT_SECRET non défini');
       return res.status(500).json({ message: "La clé secrète n'est pas définie" });
     }
 
@@ -101,7 +104,9 @@ const login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    // Réponse avec les infos nécessaires
+    console.log('[LOGIN] Connexion réussie pour:', email);
+    console.log('[LOGIN] Rôle utilisateur:', user.role);
+
     res.json({
       token,
       user: {
@@ -113,8 +118,108 @@ const login = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err); // Log de l'erreur pour le débogage
+    console.error('[LOGIN] Erreur serveur :', err);
     res.status(500).json({ message: "Erreur lors de la connexion" });
+  }
+};
+
+
+
+// Récupérer tous les managers
+const getAllUsers = async (req, res) => {
+  try {
+    console.log("📥 Début récupération des utilisateurs");
+
+    const { role } = req.query;
+    const filter = role ? { role } : {};
+
+    console.log("🔎 Filtre utilisé :", filter);
+
+    const users = await User.find(filter).select("-password");
+
+    if (!Array.isArray(users)) {
+      console.warn("⚠️ Résultat inattendu : users n'est pas un tableau");
+      return res.status(200).json([]); // Fallback vide
+    }
+
+    console.log(`✅ ${users.length} utilisateur(s) récupéré(s)`);
+    console.table(
+      users.map((u) => ({
+        ID: u._id.toString(),
+        Nom: `${u.nom ?? "(email?)"}`,
+        Rôle: u.role,
+      }))
+    );
+
+    res.status(200).json(users);
+    console.log("📤 Réponse envoyée avec succès");
+
+  } catch (error) {
+    console.error("❌ Erreur lors de la récupération des utilisateurs :", error);
+    res.status(500).json({ message: "Erreur serveur." });
+  }
+};
+
+
+
+
+// Modifier un utilisateur
+const updateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { nom, email, role, password } = req.body;
+
+    // Recherche de l'utilisateur
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    // Mise à jour des champs
+    if (nom) user.nom = nom;
+    if (email) user.email = email;
+    if (role) {
+      const allowedRoles = ["admin", "RH", "Manager"];
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ message: "Rôle invalide." });
+      }
+      user.role = role;
+    }
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    await user.save();
+
+    res.json({
+      message: "Utilisateur mis à jour avec succès.",
+      user: {
+        _id: user._id,
+        nom: user.nom,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de l'utilisateur :", error);
+    res.status(500).json({ message: "Erreur serveur." });
+  }
+};
+
+// Supprimer un utilisateur
+const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    res.json({ message: "Utilisateur supprimé avec succès." });
+  } catch (error) {
+    console.error("Erreur lors de la suppression de l'utilisateur :", error);
+    res.status(500).json({ message: "Erreur serveur." });
   }
 };
 
@@ -122,6 +227,13 @@ const login = async (req, res) => {
 
 
 
+
+
+
+
+
+
+
   
   
-export { login, createUserAccount };
+export { login, createUserAccount, getAllUsers, updateUser, deleteUser };

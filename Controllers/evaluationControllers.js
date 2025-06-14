@@ -2,6 +2,7 @@ import Evaluation from "../models/Evaluation.js";
 import EvaluationPotentiel from "../models/EvaluationPotentiel.js";
 import { sendEvaluationEmail } from "../services/mail.service.js";
 import { generateEvaluationPdf } from "../utils/generatEvaluationpdf.js";
+import Activity from "../models/Activites.js";
 
 
 
@@ -49,7 +50,6 @@ export const createEvaluation = async (req, res) => {
 };
 
 
-// Exemple dans le controller
 export const updateOrCreateEvaluation = async (req, res) => {
     const { staffId, managerId, periodeEvaluation, data } = req.body;
 
@@ -58,7 +58,7 @@ export const updateOrCreateEvaluation = async (req, res) => {
             staffId,
             managerId,
             periodeEvaluation,
-            statut: { $ne: 'Finalisé' } // important pour ne pas écraser une version finale
+            statut: { $ne: 'Finalisé' }
         });
 
         if (evaluationExistante) {
@@ -72,10 +72,28 @@ export const updateOrCreateEvaluation = async (req, res) => {
             });
 
             await evaluationExistante.save();
+
+            // Créer une activité dans la collection
+            await Activity.create({
+                type: 'evaluation',
+                title: 'Évaluation mise à jour',
+                description: `Évaluation de ${staffId} mise à jour pour la période ${periodeEvaluation}`,
+                time: new Date()
+            });
+
             return res.status(200).json(evaluationExistante);
         } else {
             const nouvelle = new Evaluation(data);
             await nouvelle.save();
+
+            // Créer une activité dans la collection
+            await Activity.create({
+                type: 'evaluation',
+                title: 'Nouvelle évaluation créée',
+                description: `Nouvelle évaluation créée pour ${staffId} pendant la période ${periodeEvaluation}`,
+                time: new Date()
+            });
+
             return res.status(201).json(nouvelle);
         }
     } catch (error) {

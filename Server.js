@@ -6,6 +6,7 @@ import { connectToDatabase } from './config/db.js';
 import authRoutes from './Routes/authRoute.js';
 import staffRoutes from './Routes/staffRoutes.js';
 import departemantRoutes from './Routes/departementRoutes.js';
+import activiteRoute from './Routes/activiteRoute.js';
 
 
 dotenv.config();
@@ -42,6 +43,7 @@ app.use('/Evaluation', EvaluationRoutes);
 app.use('/auth', authRoutes);
 app.use('/staff', staffRoutes);
 app.use('/departement', departemantRoutes);
+app.use('/activite', activiteRoute);
 
 
 
