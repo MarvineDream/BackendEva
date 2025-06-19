@@ -1,5 +1,5 @@
 import express from "express";
-import { assignDepartementsToManager, createDepartement, deleteDepartement, getAllDepartements, updateDepartement } from "../Controllers/departementControllers.js";
+import { assignDepartementsToManager, createDepartement, deleteDepartement, getAllDepartements, getDepartementById, updateDepartement } from "../Controllers/departementControllers.js";
 import authMiddleware, { authorizeRoles } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -14,8 +14,12 @@ router.post('/managers/:managerId/departements', authMiddleware, authorizeRoles(
 // Route pour lister tous les départements
 router.get('/', authMiddleware, authorizeRoles("RH"), getAllDepartements);
 
+// Route pour recuperer un departement
+router.get('/:id', authMiddleware, authorizeRoles('RH'), getDepartementById);
+
 // Route pour mettre à jour un département
 router.put('/:id', authMiddleware, authorizeRoles("RH"), updateDepartement);
+
 
 // Route pour supprimer un département
 router.delete('/:id', authMiddleware, authorizeRoles("RH"), deleteDepartement);

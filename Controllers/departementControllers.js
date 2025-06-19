@@ -36,19 +36,24 @@ export const createDepartement = async (req, res) => {
   }
 };
 
-// Lister tous les départements
+// Lister tous les départements avec les informations du manager
 export const getAllDepartements = async (req, res) => {
   console.log('[getAllDepartements] Début de la récupération des départements');
 
   try {
-    const departements = await Department.find();
+    // Récupérer tous les départements et peupler le champ managerId
+    const departements = await Department.find().populate('managerId');
+    
     console.log(`[getAllDepartements] Nombre de départements récupérés : ${departements.length}`);
+    
+    // Retourner la réponse avec les départements peuplés
     res.status(200).json(departements);
   } catch (err) {
     console.error('[getAllDepartements] Erreur lors de la récupération des départements:', err);
     res.status(500).json({ error: 'Erreur lors de la récupération.' });
   }
 };
+
 
 
 // Modifier un département
@@ -126,5 +131,39 @@ export const assignDepartementsToManager = async (req, res) => {
   } catch (err) {
     console.error('Erreur lors de l\'assignation des départements:', err);
     res.status(500).json({ error: 'Erreur serveur lors de l’attribution des départements.' });
+  }
+};
+
+
+// Récupérer un département par ID avec les infos du manager
+export const getDepartementById = async (req, res) => {
+  const { id } = req.params;
+  console.log("📥 [getDepartementById] Requête reçue pour l'ID :", id);
+
+  // Vérifie que l'ID est valide
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    console.warn("⚠️ ID invalide fourni :", id);
+    return res.status(400).json({ error: 'ID de département invalide.' });
+  }
+
+  try {
+    console.log("🔍 Recherche du département dans la base de données...");
+    const departement = await Department.findById(id).populate('managerId');
+
+    if (!departement) {
+      console.warn("❗ Département non trouvé pour l'ID :", id);
+      return res.status(404).json({ error: 'Département introuvable.' });
+    }
+
+    console.log("✅ Département trouvé :", {
+      id: departement._id,
+      name: departement.name,
+      manager: departement.managerId ? `${departement.managerId.nom}` : "Aucun manager"
+    });
+
+    res.status(200).json(departement);
+  } catch (err) {
+    console.error("❌ Erreur lors de la récupération du département :", err);
+    res.status(500).json({ error: 'Erreur lors de la récupération du département.' });
   }
 };

@@ -133,16 +133,16 @@ const getAllUsers = async (req, res) => {
     const { role } = req.query;
     const filter = role ? { role } : {};
 
-    console.log("🔎 Filtre utilisé :", filter);
+    console.log("Filtre utilisé :", filter);
 
     const users = await User.find(filter).select("-password");
 
     if (!Array.isArray(users)) {
-      console.warn("⚠️ Résultat inattendu : users n'est pas un tableau");
+      console.warn("Résultat inattendu : users n'est pas un tableau");
       return res.status(200).json([]); // Fallback vide
     }
 
-    console.log(`✅ ${users.length} utilisateur(s) récupéré(s)`);
+    console.log(`${users.length} utilisateur(s) récupéré(s)`);
     console.table(
       users.map((u) => ({
         ID: u._id.toString(),
@@ -152,10 +152,10 @@ const getAllUsers = async (req, res) => {
     );
 
     res.status(200).json(users);
-    console.log("📤 Réponse envoyée avec succès");
+    console.log("Réponse envoyée avec succès");
 
   } catch (error) {
-    console.error("❌ Erreur lors de la récupération des utilisateurs :", error);
+    console.error("Erreur lors de la récupération des utilisateurs :", error);
     res.status(500).json({ message: "Erreur serveur." });
   }
 };

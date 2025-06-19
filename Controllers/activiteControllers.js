@@ -8,7 +8,7 @@ export const getRecentActivities = async (req, res) => {
     console.log('[GET /activities] Tentative de récupération des activités depuis la base de données...');
     
     const activities = await Activity.find()
-      .sort({ time: -1 })  // Assurez-vous que "time" est bien un champ Date dans ton modèle
+      .sort({ time: -1 })  
       .limit(10);
     
     console.log(`[GET /activities] ${activities.length} activité(s) récupérée(s)`);

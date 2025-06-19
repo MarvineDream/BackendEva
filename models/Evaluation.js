@@ -8,7 +8,7 @@ const EvaluationSchema = new mongoose.Schema({
     required: true
   },
 
-  // ✅ Période de l’évaluation
+  // Période de l’évaluation
   periodeEvaluation: {
     type: String,
     enum: ["Mensuel", "1er Trimestre", "2e Trimestre", "3e Trimestre", "Annuel", "Finale"],
