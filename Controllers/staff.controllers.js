@@ -160,30 +160,79 @@ export const getStaffByDepartment = async (req, res) => {
 
 // Statistiques globales
 export const getStats = async (req, res) => {
+  console.log("[getStats] ➤ Démarrage de la récupération des statistiques");
+
   try {
     const totalStaff = await Staff.countDocuments();
+    console.log(`[getStats] ✅ Nombre total de staff : ${totalStaff}`);
+
     const contratsExpirants = await Staff.find({
-      dateFinContrat: { $gte: new Date(), $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
+      dateFinContrat: {
+        $gte: new Date(),
+        $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      }
     });
+    console.log(`[getStats] ✅ Contrats expirants dans 30 jours : ${contratsExpirants.length}`);
 
     const parDepartement = await Staff.aggregate([
-      { $group: { _id: "$departement", count: { $sum: 1 } } }
+      {
+        $group: {
+          _id: "$departement",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: "departments", // nom exact de la collection MongoDB
+          localField: "_id",
+          foreignField: "_id",
+          as: "departementInfo"
+        }
+      },
+      { $unwind: "$departementInfo" },
+      {
+        $project: {
+          nom: "$departementInfo.name",
+          count: 1
+        }
+      }
     ]);
+    console.log(`[getStats] ✅ Statistiques par département :`, parDepartement);
 
     const parTypeContrat = await Staff.aggregate([
-      { $group: { _id: "$typeContrat", count: { $sum: 1 } } }
+      {
+        $group: {
+          _id: "$typeContrat",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          type: "$_id",
+          count: 1,
+          _id: 0
+        }
+      }
     ]);
+    console.log(`[getStats] ✅ Statistiques par type de contrat :`, parTypeContrat);
 
     res.json({
       totalStaff,
       contratsExpirants,
-      parDepartement: parDepartement.map(d => ({ nom: d._id, count: d.count })),
-      parTypeContrat: parTypeContrat.map(t => ({ type: t._id, count: t.count }))
+      parDepartement,
+      parTypeContrat
     });
+
+    console.log("[getStats] ✅ Réponse envoyée avec succès !");
   } catch (err) {
-    res.status(500).json({ message: "Erreur statistiques", error: err.message });
+    console.error("[getStats] ❌ Erreur :", err.message);
+    res.status(500).json({
+      message: "Erreur statistiques",
+      error: err.message
+    });
   }
 };
+
 
 
 // Récupérer les contrats expirants
