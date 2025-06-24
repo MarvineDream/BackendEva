@@ -1,70 +1,89 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import Department from '../models/Departement.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+
+
 const createUserAccount = async (req, res) => {
   try {
-    const { nom, email, password, role } = req.body;
+    const { nom, email, password, role, departement } = req.body;
 
     console.log("👉 Requête reçue pour créer un utilisateur :", req.body);
 
-    // Vérifie que les champs sont présents
-    if (!nom || !email || !password || !role) {
-      console.warn("Champs manquants :", { nom, email, password, role });
-      return res.status(400).json({ error: "Nom, email, mot de passe et rôle sont requis." });
+    // ✅ Vérifie les champs obligatoires
+    if (!nom?.trim() || !email?.trim() || !password || !role) {
+      return res.status(400).json({ message: "Nom, email, mot de passe et rôle sont requis." });
     }
 
-    // Vérifie que le rôle est autorisé
+    // ✅ Vérifie le rôle autorisé
     const allowedRoles = ["admin", "RH", "Manager"];
     if (!allowedRoles.includes(role)) {
-      console.warn("Rôle invalide :", role);
-      return res.status(400).json({ error: "Rôle invalide. Rôles autorisés : admin, RH, Manager." });
+      return res.status(400).json({ message: "Rôle invalide. Rôles autorisés : admin, RH, Manager." });
     }
 
-    // Vérifie si l'email est déjà utilisé
+    // ✅ Vérifie l'unicité de l'email
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.warn("Email déjà utilisé :", email);
-      return res.status(409).json({ error: "Un utilisateur avec cet email existe déjà." });
+      return res.status(409).json({ message: "Un utilisateur avec cet email existe déjà." });
     }
 
-    console.log("Hachage du mot de passe...");
+    // ✅ Hash du mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Création du compte
-    const newUser = new User({
-      nom,
-      email,
+    // ✅ Données à enregistrer
+    const newUserData = {
+      nom: nom.trim(),
+      email: email.trim(),
       password: hashedPassword,
-      role, 
-    });
+      role,
+    };
 
-    console.log("Enregistrement du nouvel utilisateur en base de données...");
+    // ✅ Cas particulier : Manager
+    if (role === "Manager") {
+      if (!departement) {
+        return res.status(400).json({ message: "Le département est requis pour un manager." });
+      }
+
+      const existingDepartment = await Department.findById(departement);
+      if (!existingDepartment) {
+        return res.status(400).json({ message: "Département invalide." });
+      }
+
+      newUserData.departement = departement;
+    }
+
+    // ✅ Création du user
+    const newUser = new User(newUserData);
     await newUser.save();
 
-    console.log("Compte créé avec succès :", {
-      id: newUser._id,
-      nom: newUser.nom,
-      email: newUser.email,
-      role: newUser.role,
-    });
+    // ✅ Si Manager, associer le manager au département
+    if (role === "Manager") {
+      await Department.findByIdAndUpdate(departement, {
+        manager: newUser._id,
+      });
+    }
 
-    res.status(201).json({
+    // ✅ Réponse
+    return res.status(201).json({
       message: "Compte utilisateur créé avec succès.",
       user: {
         id: newUser._id,
         nom: newUser.nom,
         email: newUser.email,
         role: newUser.role,
+        departement: newUser.departement || null,
       },
     });
   } catch (error) {
     console.error("Erreur lors de la création de l'utilisateur :", error);
-    res.status(500).json({ error: "Erreur serveur." });
+    return res.status(500).json({ message: "Erreur serveur." });
   }
 };
+
+
 
 
 
@@ -114,7 +133,7 @@ const login = async (req, res) => {
         nom: user.nom,
         email: user.email,
         role: user.role,
-        departement: user.departements, 
+        departement: user.departement, 
       },
     });
   } catch (err) {
@@ -128,7 +147,7 @@ const login = async (req, res) => {
 // Récupérer tous les managers
 const getAllUsers = async (req, res) => {
   try {
-    console.log("📥 Début récupération des utilisateurs");
+    console.log("Début récupération des utilisateurs");
 
     const { role } = req.query;
     const filter = role ? { role } : {};

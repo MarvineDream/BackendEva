@@ -4,7 +4,6 @@ import Department from "../models/Departement.js";
 
 
 
-// Créer un membre du personnel (RH uniquement)
 export const createStaff = async (req, res) => {
   try {
     const { role, _id } = req.user;
@@ -14,16 +13,23 @@ export const createStaff = async (req, res) => {
       prenom,
       email,
       poste,
-      departement,
+      departement, // ID Mongo du département
       typeContrat,
       dateEmbauche,
-      dateFinContrat
+      dateFinContrat,
     } = req.body;
 
     if (!nom || !email || !poste || !departement || !typeContrat || !dateEmbauche) {
       return res.status(400).json({ message: "Champs requis manquants." });
     }
 
+    // 🔍 Récupérer le département pour en extraire le manager
+    const department = await Department.findById(departement);
+    if (!department) {
+      return res.status(404).json({ message: "Département introuvable" });
+    }
+
+    const managerId = department.managerId;
     const responsableId = role === "RH" ? _id : null;
 
     const newStaff = new Staff({
@@ -35,16 +41,18 @@ export const createStaff = async (req, res) => {
       typeContrat,
       dateEmbauche: new Date(dateEmbauche),
       dateFinContrat: dateFinContrat ? new Date(dateFinContrat) : null,
-      responsableId
+      responsableId,
+      managerId, // ✅ assigné automatiquement
     });
 
     await newStaff.save();
     res.status(201).json({ message: "Staff ajouté avec succès", staff: newStaff });
+
   } catch (err) {
+    console.error("Erreur création staff :", err);
     res.status(500).json({ message: "Erreur création staff", error: err.message });
   }
 };
-
 
 // Mettre à jour un membre
 export const updateStaff = async (req, res) => {
@@ -75,12 +83,16 @@ export const deleteStaff = async (req, res) => {
 // Récupérer tous les membres (admin uniquement ou RH)
 export const getAllStaffs = async (req, res) => {
   try {
-    const staffs = await Staff.find().sort({ createdAt: -1 });
+    const staffs = await Staff.find()
+      .populate("departement") 
+      .sort({ createdAt: -1 });
+
     res.json(staffs);
   } catch (err) {
     res.status(500).json({ message: "Erreur récupération staff", error: err.message });
   }
 };
+
 
 // Récupérer un membre par ID
 export const getStaffById = async (req, res) => {
@@ -108,19 +120,21 @@ export const getStaffByResponsable = async (req, res) => {
 // Staff filtré pour le manager (par département)
 export const getStaffByManager = async (req, res) => {
   try {
-    const { _id, role } = req.user;
-    console.log(`🔍 Requête reçue pour récupérer les staffs du manager ID: ${_id}, rôle: ${role}`);
+    const { id: _id, role } = req.user;
+    console.log("req.user = ", req.user);
+    
+    console.log(`Requête reçue pour récupérer les staffs du manager ID: ${_id}, rôle: ${role}`);
 
     if (role !== "Manager") {
-      console.warn(`⚠️ Accès refusé pour l'utilisateur ID: ${_id} avec rôle: ${role}`);
+      console.warn(`Accès refusé pour l'utilisateur ID: ${_id} avec rôle: ${role}`);
       return res.status(403).json({ message: "Accès non autorisé" });
     }
 
     const staffs = await Staff.find({ managerId: _id })
-      .populate('departement', 'name description')  // Populer seulement certains champs
+      .populate('departement', 'name description')  
       .sort({ nom: 1 });
 
-    console.log(`✅ ${staffs.length} staff(s) trouvé(s) pour le manager ID: ${_id}`);
+    console.log(`${staffs.length} staff(s) trouvé(s) pour le manager ID: ${_id}`);
     staffs.forEach(s => {
       console.log(`- Staff: ${s.nom} ${s.prenom}, Département: ${s.departement ? s.departement.name : "Non renseigné"}`);
     });
@@ -128,7 +142,7 @@ export const getStaffByManager = async (req, res) => {
     res.status(200).json(staffs);
 
   } catch (error) {
-    console.error("❌ Erreur lors de la récupération du staff :", error);
+    console.error("Erreur lors de la récupération du staff :", error);
     res.status(500).json({ message: "Erreur lors de la récupération du staff" });
   }
 };
@@ -142,15 +156,15 @@ export const getStaffByDepartment = async (req, res) => {
     const departments = await Department.find({ managerId });
     const departmentIds = departments.map(dep => dep._id);
 
-    console.log(`🔍 Départements trouvés : ${departments.map(d => d.name).join(", ")}`);
+    console.log(`Départements trouvés : ${departments.map(d => d.name).join(", ")}`);
 
     // Récupérer les staffs de ces départements
     const staffs = await Staff.find({ department: { $in: departmentIds } }).populate('department');
 
-    console.log(`👥 ${staffs.length} staff(s) trouvé(s) pour le manager ${managerId}`);
+    console.log(`${staffs.length} staff(s) trouvé(s) pour le manager ${managerId}`);
     res.status(200).json(staffs);
   } catch (error) {
-    console.error("❌ Erreur :", error);
+    console.error("Erreur :", error);
     res.status(500).json({ message: "Erreur interne serveur" });
   }
 };
@@ -160,11 +174,11 @@ export const getStaffByDepartment = async (req, res) => {
 
 // Statistiques globales
 export const getStats = async (req, res) => {
-  console.log("[getStats] ➤ Démarrage de la récupération des statistiques");
+  console.log("[getStats] Démarrage de la récupération des statistiques");
 
   try {
     const totalStaff = await Staff.countDocuments();
-    console.log(`[getStats] ✅ Nombre total de staff : ${totalStaff}`);
+    console.log(`[getStats] Nombre total de staff : ${totalStaff}`);
 
     const contratsExpirants = await Staff.find({
       dateFinContrat: {
@@ -172,7 +186,7 @@ export const getStats = async (req, res) => {
         $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       }
     });
-    console.log(`[getStats] ✅ Contrats expirants dans 30 jours : ${contratsExpirants.length}`);
+    console.log(`[getStats] Contrats expirants dans 30 jours : ${contratsExpirants.length}`);
 
     const parDepartement = await Staff.aggregate([
       {
@@ -183,7 +197,7 @@ export const getStats = async (req, res) => {
       },
       {
         $lookup: {
-          from: "departments", // nom exact de la collection MongoDB
+          from: "departments", 
           localField: "_id",
           foreignField: "_id",
           as: "departementInfo"
@@ -197,7 +211,7 @@ export const getStats = async (req, res) => {
         }
       }
     ]);
-    console.log(`[getStats] ✅ Statistiques par département :`, parDepartement);
+    console.log(`[getStats] Statistiques par département :`, parDepartement);
 
     const parTypeContrat = await Staff.aggregate([
       {
@@ -214,7 +228,7 @@ export const getStats = async (req, res) => {
         }
       }
     ]);
-    console.log(`[getStats] ✅ Statistiques par type de contrat :`, parTypeContrat);
+    console.log(`[getStats] Statistiques par type de contrat :`, parTypeContrat);
 
     res.json({
       totalStaff,
@@ -223,9 +237,9 @@ export const getStats = async (req, res) => {
       parTypeContrat
     });
 
-    console.log("[getStats] ✅ Réponse envoyée avec succès !");
+    console.log("[getStats] Réponse envoyée avec succès !");
   } catch (err) {
-    console.error("[getStats] ❌ Erreur :", err.message);
+    console.error("[getStats] Erreur :", err.message);
     res.status(500).json({
       message: "Erreur statistiques",
       error: err.message
@@ -252,3 +266,36 @@ export const getExpiredContracts = async (req, res) => {
   }
 };
 
+
+export const getStaffEvolution = async (req, res) => {
+  console.log('[GET] /api/staff/evolution - Démarrage du traitement');
+
+  try {
+    console.log('Agrégation MongoDB en cours...');
+    const result = await Staff.aggregate([
+      {
+        $group: {
+          _id: { $month: '$createdAt' },
+          total: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    console.log('Résultat agrégation brut :', result);
+
+    const moisMap = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+    const formatted = result.map((item) => ({
+      mois: moisMap[item._id - 1],
+      total: item.total,
+    }));
+
+    console.log('Données formatées pour le frontend :', formatted);
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('Erreur pendant l\'agrégation du personnel :', err);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};

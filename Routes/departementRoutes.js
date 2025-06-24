@@ -12,10 +12,10 @@ router.post('/', authMiddleware, authorizeRoles("RH"), createDepartement);
 router.post('/managers/:managerId/departements', authMiddleware, authorizeRoles("RH"), assignDepartementsToManager);
 
 // Route pour lister tous les départements
-router.get('/', authMiddleware, authorizeRoles("RH"), getAllDepartements);
+router.get('/', getAllDepartements);
 
 // Route pour recuperer un departement
-router.get('/:id', authMiddleware, authorizeRoles('RH'), getDepartementById);
+router.get('/:id', getDepartementById);
 
 // Route pour mettre à jour un département
 router.put('/:id', authMiddleware, authorizeRoles("RH"), updateDepartement);

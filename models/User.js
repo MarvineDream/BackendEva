@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema(
       required: true
     },
 
-    departements: [
+    departement: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Department",
