@@ -13,17 +13,34 @@ export const createStaff = async (req, res) => {
       prenom,
       email,
       poste,
-      departement, // ID Mongo du département
+      departement,
       typeContrat,
       dateEmbauche,
       dateFinContrat,
+      dateDebutStage,
+      dateFinStage,
     } = req.body;
 
-    if (!nom || !email || !poste || !departement || !typeContrat || !dateEmbauche) {
+    if (!nom || !email || !poste || !departement || !typeContrat) {
       return res.status(400).json({ message: "Champs requis manquants." });
     }
 
-    // 🔍 Récupérer le département pour en extraire le manager
+    // 🔍 Vérification des dates selon le type de contrat
+    if (typeContrat === "CDI") {
+      if (!dateEmbauche) {
+        return res.status(400).json({ message: "Date d'embauche requise pour un CDI." });
+      }
+    } else if (typeContrat === "CDD") {
+      if (!dateEmbauche || !dateFinContrat) {
+        return res.status(400).json({ message: "Date d'embauche et de fin de contrat requises pour un CDD." });
+      }
+    } else if (typeContrat === "Stagiaire") {
+      if (!dateDebutStage || !dateFinStage) {
+        return res.status(400).json({ message: "Date de début et de fin de stage requises pour un stagiaire." });
+      }
+    }
+
+    // 🔍 Récupérer le département
     const department = await Department.findById(departement);
     if (!department) {
       return res.status(404).json({ message: "Département introuvable" });
@@ -32,6 +49,7 @@ export const createStaff = async (req, res) => {
     const managerId = department.managerId;
     const responsableId = role === "RH" ? _id : null;
 
+    // 🎯 Construire dynamiquement le staff selon le type de contrat
     const newStaff = new Staff({
       nom,
       prenom,
@@ -39,11 +57,21 @@ export const createStaff = async (req, res) => {
       poste,
       departement,
       typeContrat,
-      dateEmbauche: new Date(dateEmbauche),
-      dateFinContrat: dateFinContrat ? new Date(dateFinContrat) : null,
+      managerId,
       responsableId,
-      managerId, // ✅ assigné automatiquement
     });
+
+    if (typeContrat === "CDI" || typeContrat === "CDD") {
+      newStaff.dateEmbauche = new Date(dateEmbauche);
+      if (typeContrat === "CDD") {
+        newStaff.dateFinContrat = new Date(dateFinContrat);
+      }
+    }
+
+    if (typeContrat === "Stagiaire") {
+      newStaff.dateDebutStage = new Date(dateDebutStage);
+      newStaff.dateFinStage = new Date(dateFinStage);
+    }
 
     await newStaff.save();
     res.status(201).json({ message: "Staff ajouté avec succès", staff: newStaff });
@@ -53,6 +81,7 @@ export const createStaff = async (req, res) => {
     res.status(500).json({ message: "Erreur création staff", error: err.message });
   }
 };
+
 
 // Mettre à jour un membre
 export const updateStaff = async (req, res) => {
@@ -84,7 +113,7 @@ export const deleteStaff = async (req, res) => {
 export const getAllStaffs = async (req, res) => {
   try {
     const staffs = await Staff.find()
-      .populate("departement") 
+      .populate("departement")
       .sort({ createdAt: -1 });
 
     res.json(staffs);
@@ -94,17 +123,42 @@ export const getAllStaffs = async (req, res) => {
 };
 
 
-// Récupérer un membre par ID
-export const getStaffById = async (req, res) => {
-  try {
-    const staff = await Staff.findById(req.params.id);
-    if (!staff) return res.status(404).json({ message: "Staff non trouvé" });
+// Récupérer un membre du staff par ID avec logs
 
-    res.json(staff);
+export const getStaffById = async (req, res) => {
+  const { staffId } = req.params;
+
+  console.log("📥 Requête GET /staff/:staffId");
+  console.log("🔍 ID reçu :", staffId);
+
+  try {
+    const staff = await Staff.findById(staffId)
+      .populate({
+        path: "departement",
+        select: "name",
+        transform: (doc) => ({ _id: doc._id, nom: doc.name }) 
+      })
+      .lean();
+    // Pour renvoyer un objet simple, optimisé pour la lecture
+
+    if (!staff) {
+      console.warn("⚠️ Staff non trouvé pour l'ID :", staffId);
+      return res.status(404).json({ message: "Staff non trouvé" });
+    }
+
+    return res.status(200).json(staff);
   } catch (err) {
-    res.status(500).json({ message: "Erreur récupération staff", error: err.message });
+    console.error("❌ Erreur lors de la récupération du staff :", err);
+    return res.status(500).json({
+      message: "Erreur récupération staff",
+      error: err.message,
+    });
   }
 };
+
+
+
+
 
 // Récupérer le staff d'un responsable RH
 export const getStaffByResponsable = async (req, res) => {
@@ -122,7 +176,7 @@ export const getStaffByManager = async (req, res) => {
   try {
     const { id: _id, role } = req.user;
     console.log("req.user = ", req.user);
-    
+
     console.log(`Requête reçue pour récupérer les staffs du manager ID: ${_id}, rôle: ${role}`);
 
     if (role !== "Manager") {
@@ -131,7 +185,7 @@ export const getStaffByManager = async (req, res) => {
     }
 
     const staffs = await Staff.find({ managerId: _id })
-      .populate('departement', 'name description')  
+      .populate('departement', 'name description')
       .sort({ nom: 1 });
 
     console.log(`${staffs.length} staff(s) trouvé(s) pour le manager ID: ${_id}`);
@@ -197,7 +251,7 @@ export const getStats = async (req, res) => {
       },
       {
         $lookup: {
-          from: "departments", 
+          from: "departments",
           localField: "_id",
           foreignField: "_id",
           as: "departementInfo"

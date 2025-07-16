@@ -1,6 +1,6 @@
 import express from "express";
 import { createStaff, deleteStaff, getAllStaffs, getExpiredContracts, getStaffByDepartment, getStaffById, getStaffByManager, getStaffEvolution, getStats, updateStaff } from "../Controllers/staff.controllers.js";
-import authMiddleware, { authorizeRoles, verifyToken } from "../middleware/auth.middleware.js";
+import authMiddleware, { authorizeRoles} from "../middleware/auth.middleware.js";
 
 
 const router = express.Router();
@@ -23,7 +23,7 @@ router.get('/by-departement/:id', authMiddleware, getStaffByDepartment);
 router.get('/manager', authMiddleware, authorizeRoles("Manager"), getStaffByManager);
 
 
-router.get('/:id', getStaffById);
+router.get('/:staffId', getStaffById);
 
 
 router.put('/:id', updateStaff);

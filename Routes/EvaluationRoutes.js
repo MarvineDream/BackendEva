@@ -1,5 +1,5 @@
 import express from 'express';
-import { deleteEvaluation, getAllEvaluations, getEvaluationById, getEvaluationsByManager, updateEvaluation, updateEvaluationStatus, updateOrCreateEvaluation } from '../Controllers/evaluationControllers.js';
+import { createEvaluationPotentiel, deleteEvaluation, getAllEvaluations, getEvaluationById, getEvaluationInProgress, getEvaluationsByManager, getEvaluationsByStaff, updateEvaluation, updateEvaluationStatus, updateOrCreateEvaluation } from '../Controllers/evaluationControllers.js';
 import authMiddleware, { authorizeRoles } from '../middleware/auth.middleware.js';
 
 
@@ -11,6 +11,16 @@ router.use(authMiddleware);
 
 // Soumission de fiche (Manager ou RH)
 router.post("/", authorizeRoles("manager", "RH"), updateOrCreateEvaluation);
+
+router.post("/create", authorizeRoles("Manager"), createEvaluationPotentiel);
+
+router.post('/save', authorizeRoles("Manager"), updateOrCreateEvaluation);
+
+
+router.get("/staff/:id", getEvaluationsByStaff); 
+
+// Récupérer les fiches en cours d'un staff spécifique
+router.get("/staff/:id/:dateEvaluation", getEvaluationInProgress); 
 
 // Lire une fiche spécifique
 router.get("/:id", getEvaluationById);

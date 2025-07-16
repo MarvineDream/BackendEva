@@ -19,7 +19,7 @@ const createUserAccount = async (req, res) => {
     }
 
     // ✅ Vérifie le rôle autorisé
-    const allowedRoles = ["admin", "RH", "Manager"];
+    const allowedRoles = ["RH", "Manager"];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ message: "Rôle invalide. Rôles autorisés : admin, RH, Manager." });
     }
