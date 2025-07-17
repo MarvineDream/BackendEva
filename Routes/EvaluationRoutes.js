@@ -1,5 +1,5 @@
 import express from 'express';
-import { createEvaluationPotentiel, deleteEvaluation, getAllEvaluations, getEvaluationById, getEvaluationInProgress, getEvaluationsByManager, getEvaluationsByStaff, updateEvaluation, updateEvaluationStatus, updateOrCreateEvaluation } from '../Controllers/evaluationControllers.js';
+import { createEvaluationPotentiel, deleteEvaluation, getAllEvaluations, getEvaluationById, getEvaluationInProgress, getEvaluationsByManager, getEvaluationsByStaff, getEvaluationsPotentielByStaff, updateEvaluation, updateEvaluationStatus, updateOrCreateEvaluation } from '../Controllers/evaluationControllers.js';
 import authMiddleware, { authorizeRoles } from '../middleware/auth.middleware.js';
 
 
@@ -21,6 +21,9 @@ router.get("/staff/:id", getEvaluationsByStaff);
 
 // Récupérer les fiches en cours d'un staff spécifique
 router.get("/staff/:id/:dateEvaluation", getEvaluationInProgress); 
+
+
+router.get("/staff/:id", authorizeRoles("RH", "Manager"), getEvaluationsPotentielByStaff);
 
 // Lire une fiche spécifique
 router.get("/:id", getEvaluationById);

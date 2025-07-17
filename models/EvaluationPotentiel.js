@@ -41,11 +41,6 @@ const evaluationPotentielSchema = new mongoose.Schema({
     enum: ['PROFESSIONAL', 'ACHIEVER', 'POTENTIAL'],
     required: true,
   },
-  classificationFinale: {
-    type: String,
-    enum: ['A', 'B+', 'B', 'C', 'D'],
-    required: false,
-  },
   createdAt: {
     type: Date,
     default: Date.now,

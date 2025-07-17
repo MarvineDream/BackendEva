@@ -3,7 +3,6 @@ import EvaluationPotentiel from "../models/EvaluationPotentiel.js";
 import { sendEvaluationEmail } from "../services/mail.service.js";
 import { generateEvaluationPdf } from "../utils/generatEvaluationpdf.js";
 import Activity from "../models/Activites.js";
-import EvaluationPotentiel from "../models/EvaluationPotentiel.js";
 
 
 
@@ -406,14 +405,19 @@ export const createEvaluationPotentiel = async (req, res) => {
       staffId,
       criteres,
       commentaire,
-      classificationFinale,
+      // classificationFinale est supprimé
       periodeEvaluation = 'Potentiel',
     } = req.body;
 
+    console.log("📥 Requête POST /Evaluation/create reçue");
+    console.log("📨 Données reçues dans req.body :", req.body);
+
+    // Vérification des champs requis
     if (!staffId || !criteres || criteres.length === 0) {
       return res.status(400).json({ message: 'Champs requis manquants' });
     }
 
+    // Calculs
     const noteGlobale = criteres.reduce((acc, curr) => acc + curr.note, 0);
     const moyenne = noteGlobale / criteres.length;
 
@@ -422,6 +426,10 @@ export const createEvaluationPotentiel = async (req, res) => {
     else if (moyenne <= 4) classificationAutomatique = 'ACHIEVER';
     else classificationAutomatique = 'POTENTIAL';
 
+    console.log("✅ Calculs effectués :", { noteGlobale, moyenne });
+    console.log("🔎 Classification automatique déterminée :", classificationAutomatique);
+
+    // Enregistrement en base de données
     const evaluation = await EvaluationPotentiel.create({
       staffId,
       dateEvaluation: new Date(),
@@ -431,12 +439,27 @@ export const createEvaluationPotentiel = async (req, res) => {
       noteGlobale,
       moyenne,
       classificationAutomatique,
-      classificationFinale,
     });
 
     res.status(201).json({ message: 'Évaluation enregistrée', evaluation });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Erreur lors de la création de l'évaluation :", error);
     res.status(500).json({ message: "Erreur lors de la création." });
+  }
+};
+
+export const getEvaluationsPotentielByStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("📥 Requête GET /EvaluationPotentiel/staff/:id reçue");
+    console.log("🔎 Paramètre reçu (staffId) :", id);
+
+    const evaluations = await EvaluationPotentiel.find({ staffId: id }).sort({ dateEvaluation: -1 });
+
+    console.log(`✅ ${evaluations.length} évaluation(s) trouvée(s) pour le staffId ${id}`);
+    res.json(evaluations);
+  } catch (err) {
+    console.error("❌ Erreur lors de la récupération des évaluations de potentiel :", err);
+    res.status(500).json({ message: "Erreur récupération évaluations potentiel" });
   }
 };
